@@ -772,6 +772,12 @@
         await supabaseClient
           .from("auctions")
           .select("*")
+          .order(
+            "id",
+            {
+              ascending: false
+            }
+          )
           .limit(1)
           .single();
 
@@ -802,6 +808,15 @@
       showPrice(
         auction.current_price
       );
+
+      winnerBox.style.display =
+        "none";
+
+      winnerName.textContent =
+        "";
+
+      winnerPrice.textContent =
+        "";
 
       message.textContent =
         "";
@@ -893,9 +908,6 @@
         tg.initDataUnsafe?.user;
 
 
-      // telegram_user_id BIGINT
-      // bo‘lgani uchun Number ishlatamiz
-
       if (!user?.id) {
 
         console.error(
@@ -962,7 +974,6 @@
           bidError
         );
 
-
         message.textContent =
           "❌ Bid saqlanmadi: " +
           (
@@ -970,10 +981,8 @@
             "Noma’lum xato"
           );
 
-
         button.disabled =
           false;
-
 
         return;
       }
@@ -984,7 +993,6 @@
 
 
       await loadBids();
-
 
       updateTimer();
 
@@ -1040,18 +1048,44 @@
             auction =
               payload.new;
 
-
             showPrice(
               auction.current_price
             );
 
-
             updateTimer();
-
 
             loadBids();
 
           }
+
+        }
+      )
+
+      // ==============================
+      // YANGI AUCTION YARATILSA
+      // ==============================
+
+      .on(
+        "postgres_changes",
+        {
+          event:
+            "INSERT",
+
+          schema:
+            "public",
+
+          table:
+            "auctions"
+        },
+
+        function(payload) {
+
+          console.log(
+            "Yangi auktsion yaratildi:",
+            payload.new
+          );
+
+          loadAuction();
 
         }
       )
