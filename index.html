@@ -39,6 +39,10 @@
       background: #e5e7eb;
       padding: 8px 12px;
       border-radius: 12px;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .section-title {
@@ -125,8 +129,9 @@
       min-height: 20px;
     }
 
+
     /* ==============================
-       BIDS LIST
+       BIDS BOX
        ============================== */
 
     .bids-box {
@@ -147,6 +152,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
       padding: 11px 0;
       border-bottom: 1px solid #e5e7eb;
     }
@@ -157,10 +163,14 @@
 
     .bid-user {
       font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .bid-amount {
       font-weight: 800;
+      white-space: nowrap;
     }
 
     .no-bids {
@@ -168,6 +178,7 @@
       text-align: center;
       padding: 8px 0;
     }
+
 
     /* ==============================
        WINNER BOX
@@ -210,13 +221,22 @@
 <body>
 
   <div class="header">
-    <div class="logo">🔨 AuctionUZ</div>
-    <div class="profile">👤 Profil</div>
+
+    <div class="logo">
+      🔨 AuctionUZ
+    </div>
+
+    <div class="profile">
+      👤 Profil
+    </div>
+
   </div>
+
 
   <div class="section-title">
     🔥 Jonli auktsion
   </div>
+
 
   <div class="auction-card">
 
@@ -224,19 +244,23 @@
       🎧
     </div>
 
+
     <div class="content">
 
       <div class="product-name" id="productName">
         Yuklanmoqda...
       </div>
 
+
       <div class="description" id="description">
         Yuklanmoqda...
       </div>
 
+
       <div class="info">
 
         <div>
+
           <div class="label">
             Hozirgi narx
           </div>
@@ -244,9 +268,12 @@
           <div class="price" id="price">
             ...
           </div>
+
         </div>
 
+
         <div>
+
           <div class="label">
             Tugashiga
           </div>
@@ -254,15 +281,25 @@
           <div class="timer" id="timer">
             --:--:--
           </div>
+
         </div>
 
       </div>
 
-      <button class="bid-button" id="bidButton" disabled>
+
+      <button
+        class="bid-button"
+        id="bidButton"
+        disabled
+      >
         💰 +5 000 so‘m taklif qilish
       </button>
 
-      <div class="message" id="message"></div>
+
+      <div
+        class="message"
+        id="message"
+      ></div>
 
 
       <!-- ==============================
@@ -276,38 +313,52 @@
         </div>
 
         <div id="bidsList">
+
           <div class="no-bids">
             Hali taklif yo‘q
           </div>
+
         </div>
 
       </div>
 
 
       <!-- ==============================
-           WINNER
+           WINNER BOX
            ============================== -->
 
-      <div class="winner-box" id="winnerBox">
+      <div
+        class="winner-box"
+        id="winnerBox"
+      >
 
         <div class="winner-icon">
           🏆
         </div>
 
+
         <div class="winner-title">
           Auktsion tugadi!
         </div>
 
-        <div class="winner-name" id="winnerName">
-        </div>
 
-        <div class="winner-price" id="winnerPrice">
-        </div>
+        <div
+          class="winner-name"
+          id="winnerName"
+        ></div>
+
+
+        <div
+          class="winner-price"
+          id="winnerPrice"
+        ></div>
 
       </div>
 
     </div>
+
   </div>
+
 
   <script>
 
@@ -318,8 +369,10 @@
     const SUPABASE_URL =
       "https://ehpbruqswebpenepcmte.supabase.co";
 
+
     const SUPABASE_KEY =
       "sb_publishable_pN-XXonPqbmYlX3NeQt4nQ_WOo-0ZNH";
+
 
     const supabaseClient =
       window.supabase.createClient(
@@ -332,23 +385,34 @@
     // TELEGRAM
     // ==============================
 
-    const tg = window.Telegram.WebApp;
+    const tg =
+      window.Telegram.WebApp;
+
 
     tg.ready();
+
     tg.expand();
+
 
     const telegramUser =
       tg.initDataUnsafe?.user;
 
+
     if (telegramUser) {
 
-      const telegramName =
+      const profileName =
         telegramUser.username
           ? "@" + telegramUser.username
-          : (telegramUser.first_name || "Foydalanuvchi");
+          : (
+              telegramUser.first_name ||
+              "Foydalanuvchi"
+            );
 
-      document.querySelector(".profile").textContent =
-        "👤 " + telegramName;
+
+      document.querySelector(
+        ".profile"
+      ).textContent =
+        "👤 " + profileName;
     }
 
 
@@ -357,34 +421,63 @@
     // ==============================
 
     const priceElement =
-      document.getElementById("price");
+      document.getElementById(
+        "price"
+      );
+
 
     const timerElement =
-      document.getElementById("timer");
+      document.getElementById(
+        "timer"
+      );
+
 
     const button =
-      document.getElementById("bidButton");
+      document.getElementById(
+        "bidButton"
+      );
+
 
     const message =
-      document.getElementById("message");
+      document.getElementById(
+        "message"
+      );
+
 
     const productName =
-      document.getElementById("productName");
+      document.getElementById(
+        "productName"
+      );
+
 
     const description =
-      document.getElementById("description");
+      document.getElementById(
+        "description"
+      );
+
 
     const bidsList =
-      document.getElementById("bidsList");
+      document.getElementById(
+        "bidsList"
+      );
+
 
     const winnerBox =
-      document.getElementById("winnerBox");
+      document.getElementById(
+        "winnerBox"
+      );
+
 
     const winnerName =
-      document.getElementById("winnerName");
+      document.getElementById(
+        "winnerName"
+      );
+
 
     const winnerPrice =
-      document.getElementById("winnerPrice");
+      document.getElementById(
+        "winnerPrice"
+      );
 
 
     // ==============================
@@ -392,6 +485,7 @@
     // ==============================
 
     let auction = null;
+
     let timeLeft = 0;
 
 
@@ -404,8 +498,11 @@
       const number =
         Number(price) || 0;
 
+
       priceElement.textContent =
-        number.toLocaleString("uz-UZ") +
+        number.toLocaleString(
+          "uz-UZ"
+        ) +
         " so‘m";
     }
 
@@ -420,22 +517,27 @@
         return;
       }
 
-      const { data, error } =
+
+      const {
+        data,
+        error
+      } =
         await supabaseClient
           .from("bids")
           .select(
-            "user_name, username, amount, created_at"
+            "username, amount, created_at"
           )
           .eq(
             "auction_id",
             auction.id
           )
           .order(
-            "amount",
+            "created_at",
             {
               ascending: false
             }
           );
+
 
       if (error) {
 
@@ -444,14 +546,21 @@
           error
         );
 
+        bidsList.innerHTML =
+          '<div class="no-bids">Takliflarni yuklashda xato</div>';
+
         return;
       }
 
 
-      bidsList.innerHTML = "";
+      bidsList.innerHTML =
+        "";
 
 
-      if (!data || data.length === 0) {
+      if (
+        !data ||
+        data.length === 0
+      ) {
 
         bidsList.innerHTML =
           '<div class="no-bids">Hali taklif yo‘q</div>';
@@ -460,53 +569,76 @@
       }
 
 
-      data.forEach(function(bid) {
+      data.forEach(
+        function(bid, index) {
 
-        const item =
-          document.createElement("div");
-
-        item.className =
-          "bid-item";
-
-
-        const user =
-          document.createElement("div");
-
-        user.className =
-          "bid-user";
+          const item =
+            document.createElement(
+              "div"
+            );
 
 
-        const displayName =
-          bid.username
-            ? "@" + bid.username
-            : (
-                bid.user_name ||
-                "Foydalanuvchi"
-              );
-
-        user.textContent =
-          displayName;
+          item.className =
+            "bid-item";
 
 
-        const amount =
-          document.createElement("div");
-
-        amount.className =
-          "bid-amount";
-
-        amount.textContent =
-          Number(
-            bid.amount
-          ).toLocaleString("uz-UZ") +
-          " so‘m";
+          const user =
+            document.createElement(
+              "div"
+            );
 
 
-        item.appendChild(user);
+          user.className =
+            "bid-user";
 
-        item.appendChild(amount);
 
-        bidsList.appendChild(item);
-      });
+          user.textContent =
+            (
+              index + 1
+            ) +
+            ". " +
+            (
+              bid.username ||
+              "Foydalanuvchi"
+            );
+
+
+          const amount =
+            document.createElement(
+              "div"
+            );
+
+
+          amount.className =
+            "bid-amount";
+
+
+          amount.textContent =
+            Number(
+              bid.amount
+            ).toLocaleString(
+              "uz-UZ"
+            ) +
+            " so‘m";
+
+
+          item.appendChild(
+            user
+          );
+
+
+          item.appendChild(
+            amount
+          );
+
+
+          bidsList.appendChild(
+            item
+          );
+
+        }
+      );
+
     }
 
 
@@ -520,18 +652,23 @@
         return;
       }
 
+
       if (
-        winnerBox.style.display === "block"
+        winnerBox.style.display ===
+        "block"
       ) {
         return;
       }
 
 
-      const { data, error } =
+      const {
+        data,
+        error
+      } =
         await supabaseClient
           .from("bids")
           .select(
-            "user_name, username, amount"
+            "username, amount, created_at"
           )
           .eq(
             "auction_id",
@@ -573,31 +710,29 @@
         winnerName.textContent =
           "Hech kim taklif bermadi.";
 
+
         winnerPrice.textContent =
           "";
+
 
         return;
       }
 
 
-      const displayName =
-        data.username
-          ? "@" + data.username
-          : (
-              data.user_name ||
-              "Foydalanuvchi"
-            );
-
-
       winnerName.textContent =
         "🥇 G‘olib: " +
-        displayName;
+        (
+          data.username ||
+          "Foydalanuvchi"
+        );
 
 
       winnerPrice.textContent =
         Number(
           data.amount
-        ).toLocaleString("uz-UZ") +
+        ).toLocaleString(
+          "uz-UZ"
+        ) +
         " so‘m";
     }
 
@@ -608,7 +743,10 @@
 
     function updateTimer() {
 
-      if (!auction || !auction.ends_at) {
+      if (
+        !auction ||
+        !auction.ends_at
+      ) {
         return;
       }
 
@@ -627,38 +765,61 @@
         Math.max(
           0,
           Math.floor(
-            (endTime - now) / 1000
+            (
+              endTime - now
+            ) / 1000
           )
         );
 
 
-      let hours =
+      const hours =
         Math.floor(
           timeLeft / 3600
         );
 
 
-      let minutes =
+      const minutes =
         Math.floor(
-          (timeLeft % 3600) / 60
+          (
+            timeLeft % 3600
+          ) / 60
         );
 
 
-      let seconds =
+      const seconds =
         timeLeft % 60;
 
 
       timerElement.textContent =
-        String(hours).padStart(2, "0") +
+        String(
+          hours
+        ).padStart(
+          2,
+          "0"
+        ) +
         ":" +
-        String(minutes).padStart(2, "0") +
+        String(
+          minutes
+        ).padStart(
+          2,
+          "0"
+        ) +
         ":" +
-        String(seconds).padStart(2, "0");
+        String(
+          seconds
+        ).padStart(
+          2,
+          "0"
+        );
 
 
-      if (timeLeft <= 0) {
+      if (
+        timeLeft <= 0
+      ) {
 
-        button.disabled = true;
+        button.disabled =
+          true;
+
 
         button.textContent =
           "⏰ Auktsion tugadi";
@@ -669,11 +830,14 @@
 
       } else {
 
-        button.disabled = false;
+        button.disabled =
+          false;
+
 
         button.textContent =
           "💰 +5 000 so‘m taklif qilish";
       }
+
     }
 
 
@@ -687,7 +851,10 @@
         "Auktsion yuklanmoqda...";
 
 
-      const { data, error } =
+      const {
+        data,
+        error
+      } =
         await supabaseClient
           .from("auctions")
           .select("*")
@@ -697,16 +864,22 @@
 
       if (error) {
 
-        console.error(error);
+        console.error(
+          "Auction xatosi:",
+          error
+        );
+
 
         message.textContent =
           "❌ Auktsionni yuklashda xato";
+
 
         return;
       }
 
 
-      auction = data;
+      auction =
+        data;
 
 
       productName.textContent =
@@ -732,11 +905,12 @@
 
 
       updateTimer();
+
     }
 
 
     // ==============================
-    // BID
+    // PLACE BID
     // ==============================
 
     async function placeBid() {
@@ -751,7 +925,8 @@
       }
 
 
-      button.disabled = true;
+      button.disabled =
+        true;
 
 
       message.textContent =
@@ -764,11 +939,19 @@
         ) + 5000;
 
 
-      const { data, error } =
+      // ==============================
+      // UPDATE AUCTION PRICE
+      // ==============================
+
+      const {
+        data,
+        error
+      } =
         await supabaseClient
           .from("auctions")
           .update({
-            current_price: newPrice
+            current_price:
+              newPrice
           })
           .eq(
             "id",
@@ -780,7 +963,10 @@
 
       if (error) {
 
-        console.error(error);
+        console.error(
+          "Auction update xatosi:",
+          error
+        );
 
 
         message.textContent =
@@ -795,8 +981,8 @@
       }
 
 
-      // Bazadan qaytgan haqiqiy narx
-      auction = data;
+      auction =
+        data;
 
 
       showPrice(
@@ -812,27 +998,28 @@
         tg.initDataUnsafe?.user;
 
 
-      const userId =
+      const userTelegramId =
         user?.id
           ? String(user.id)
           : "unknown";
 
 
-      const userName =
-        user?.first_name ||
-        "Foydalanuvchi";
-
-
-      const username =
-        user?.username ||
-        null;
+      const userUsername =
+        user?.username
+          ? "@" + user.username
+          : (
+              user?.first_name ||
+              "Foydalanuvchi"
+            );
 
 
       // ==============================
-      // BID HISTORY
+      // SAVE BID HISTORY
       // ==============================
 
-      const { error: bidError } =
+      const {
+        error: bidError
+      } =
         await supabaseClient
           .from("bids")
           .insert({
@@ -840,14 +1027,11 @@
             auction_id:
               auction.id,
 
-            user_id:
-              userId,
-
-            user_name:
-              userName,
+            telegram_user_id:
+              userTelegramId,
 
             username:
-              username,
+              userUsername,
 
             amount:
               auction.current_price
@@ -867,19 +1051,29 @@
           "⚠️ Narx saqlandi, lekin bid tarixi saqlanmadi";
 
 
-      } else {
-
-        message.textContent =
-          "✅ Taklifingiz qabul qilindi!";
+        button.disabled =
+          false;
 
 
-        await loadBids();
+        return;
       }
 
 
+      message.textContent =
+        "✅ Taklifingiz qabul qilindi!";
+
+
+      await loadBids();
+
+
       updateTimer();
+
     }
 
+
+    // ==============================
+    // BID BUTTON
+    // ==============================
 
     button.addEventListener(
       "click",
@@ -892,14 +1086,21 @@
     // ==============================
 
     supabaseClient
-      .channel("auction-live")
+      .channel(
+        "auction-live"
+      )
 
       .on(
         "postgres_changes",
         {
-          event: "UPDATE",
-          schema: "public",
-          table: "auctions"
+          event:
+            "UPDATE",
+
+          schema:
+            "public",
+
+          table:
+            "auctions"
         },
 
         function(payload) {
@@ -910,10 +1111,10 @@
           );
 
 
-          // Faqat biz ochgan auction
           if (
             auction &&
-            payload.new.id === auction.id
+            payload.new.id ===
+              auction.id
           ) {
 
             auction =
@@ -928,9 +1129,10 @@
             updateTimer();
 
 
-            message.textContent =
-              "🔄 Narx yangilandi";
+            loadBids();
+
           }
+
         }
       )
 
@@ -938,7 +1140,7 @@
         function(status) {
 
           console.log(
-            "Realtime:",
+            "Auction realtime:",
             status
           );
 
@@ -951,14 +1153,21 @@
     // ==============================
 
     supabaseClient
-      .channel("bids-live")
+      .channel(
+        "bids-live"
+      )
 
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
-          schema: "public",
-          table: "bids"
+          event:
+            "INSERT",
+
+          schema:
+            "public",
+
+          table:
+            "bids"
         },
 
         function(payload) {
@@ -971,11 +1180,14 @@
 
           if (
             auction &&
-            payload.new.auction_id === auction.id
+            payload.new.auction_id ===
+              auction.id
           ) {
 
             loadBids();
+
           }
+
         }
       )
 
@@ -1006,4 +1218,4 @@
   </script>
 
 </body>
-</html>          
+</html>
