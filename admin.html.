@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuctionUZ — Admin</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f4f4f5;
+      color: #18181b;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 15px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    }
+
+    label {
+      display: block;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 18px;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #7c3aed;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #aaa;
+    }
+
+    #message {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    #adminPanel {
+      display: none;
+    }
+
+    .auction {
+      border-top: 1px solid #eee;
+      padding: 15px 0;
+    }
+
+    .auction:first-child {
+      border-top: none;
+    }
+
+    .price {
+      font-weight: bold;
+      color: #7c3aed;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>🔐 AuctionUZ Admin</h1>
+
+  <div id="loading" class="card">
+    Admin tekshirilmoqda...
+  </div>
+
+  <div id="notAdmin" class="card" style="display:none;">
+    ❌ Siz admin emassiz.
+  </div>
+
+  <div id="adminPanel">
+
+    <div class="card">
+      <h2>➕ Yangi auktsion</h2>
+
+      <label>Mahsulot nomi</label>
+      <input
+        id="productName"
+        type="text"
+        placeholder="Masalan: Redmi Note 14"
+      >
+
+      <label>Tavsif</label>
+      <textarea
+        id="description"
+        placeholder="Mahsulot haqida..."
+      ></textarea>
+
+      <label>Boshlang‘ich narx</label>
+      <input
+        id="startingPrice"
+        type="number"
+        placeholder="100000"
+      >
+
+      <label>Auktsion davomiyligi (soniya)</label>
+      <input
+        id="duration"
+        type="number"
+        value="30"
+        min="5"
+      >
+
+      <button id="createButton" onclick="createAuction()">
+        ➕ Auktsion yaratish
+      </button>
+
+      <div id="message"></div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Auktsionlar</h2>
+      <div id="auctionList">
+        Yuklanmoqda...
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+const SUPABASE_URL =
+  "https://ehpbruqswebpenepcmte.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_pN-XXonPqbmYlX3NeQt4nQ_WOo-0ZNH";
+
+const supabaseClient =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+const tg = window.Telegram.WebApp;
+
+tg.ready();
+tg.expand();
+
+const ADMIN_ID = 8914025886;
+
+const telegramUser =
+  tg.initDataUnsafe?.user;
+
+async function checkAdmin() {
+
+  const loading =
+    document.getElementById("loading");
+
+  const notAdmin =
+    document.getElementById("notAdmin");
+
+  const panel =
+    document.getElementById("adminPanel");
+
+  if (!telegramUser?.id) {
+
+    loading.style.display = "none";
+    notAdmin.style.display = "block";
+
+    notAdmin.textContent =
+      "❌ Telegram foydalanuvchisi aniqlanmadi.";
+
+    return;
+  }
+
+  if (Number(telegramUser.id) !== ADMIN_ID) {
+
+    loading.style.display = "none";
+    notAdmin.style.display = "block";
+
+    return;
+  }
+
+  loading.style.display = "none";
+  panel.style.display = "block";
+
+  loadAuctions();
+}
+
+
+async function createAuction() {
+
+  const productName =
+    document.getElementById("productName").value.trim();
+
+  const description =
+    document.getElementById("description").value.trim();
+
+  const startingPrice =
+    Number(
+      document.getElementById("startingPrice").value
+    );
+
+  const duration =
+    Number(
+      document.getElementById("duration").value
+    );
+
+  const button =
+    document.getElementById("createButton");
+
+  const message =
+    document.getElementById("message");
+
+
+  if (!productName) {
+    message.textContent =
+      "❌ Mahsulot nomini kiriting.";
+    return;
+  }
+
+  if (!startingPrice || startingPrice <= 0) {
+    message.textContent =
+      "❌ Boshlang‘ich narxni kiriting.";
+    return;
+  }
+
+  if (!duration || duration <= 0) {
+    message.textContent =
+      "❌ Davomiylikni kiriting.";
+    return;
+  }
+
+  button.disabled = true;
+  message.textContent =
+    "⏳ Auktsion yaratilmoqda...";
+
+
+  const endsAt =
+    new Date(
+      Date.now() + duration * 1000
+    ).toISOString();
+
+
+  const { error } =
+    await supabaseClient
+      .from("auctions")
+      .insert({
+
+        product_name: productName,
+
+        description: description,
+
+        starting_price: startingPrice,
+
+        current_price: startingPrice,
+
+        ends_at: endsAt
+
+      });
+
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "❌ Xato: " + error.message;
+
+    button.disabled = false;
+
+    return;
+  }
+
+
+  message.textContent =
+    "✅ Auktsion yaratildi!";
+
+  document.getElementById("productName").value = "";
+  document.getElementById("description").value = "";
+  document.getElementById("startingPrice").value = "";
+  document.getElementById("duration").value = "30";
+
+  button.disabled = false;
+
+  loadAuctions();
+}
+
+
+async function loadAuctions() {
+
+  const list =
+    document.getElementById("auctionList");
+
+  const { data, error } =
+    await supabaseClient
+      .from("auctions")
+      .select("*")
+      .order("ends_at", {
+        ascending: false
+      });
+
+
+  if (error) {
+
+    list.innerHTML =
+      "❌ " + error.message;
+
+    return;
+  }
+
+
+  if (!data || data.length === 0) {
+
+    list.innerHTML =
+      "Hozircha auktsionlar yo‘q.";
+
+    return;
+  }
+
+
+  list.innerHTML = data.map(a => {
+
+    const end =
+      new Date(a.ends_at);
+
+    return `
+      <div class="auction">
+
+        <strong>
+          ${escapeHtml(a.product_name)}
+        </strong>
+
+        <br><br>
+
+        💰 Joriy narx:
+        <span class="price">
+          ${Number(a.current_price).toLocaleString()}
+        </span>
+
+        <br>
+
+        ⏱️ Tugash:
+        ${end.toLocaleString()}
+
+      </div>
+    `;
+
+  }).join("");
+}
+
+
+function escapeHtml(text) {
+
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+checkAdmin();
+
+</script>
+
+</body>
+</html>
