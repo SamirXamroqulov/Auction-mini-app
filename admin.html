@@ -1,407 +1,637 @@
 <!DOCTYPE html>
 <html lang="uz">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AuctionUZ — Admin</title>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8">
 
-  <style>
-    body {
-      margin: 0;
-      padding: 20px;
-      font-family: Arial, sans-serif;
-      background: #f4f4f5;
-      color: #18181b;
-    }
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
-    .container {
-      max-width: 500px;
-      margin: auto;
-    }
+<title>AuctionUZ Admin</title>
 
-    h1 {
-      text-align: center;
-      margin-bottom: 25px;
-    }
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 16px;
-      margin-bottom: 15px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-    }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    label {
-      display: block;
-      margin-top: 12px;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
+<style>
 
-    input,
-    textarea {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 12px;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      font-size: 16px;
-    }
+*{
+    box-sizing:border-box;
+}
 
-    textarea {
-      min-height: 90px;
-      resize: vertical;
-    }
+body{
+    margin:0;
+    padding:20px;
+    background:#f4f4f5;
+    font-family:Arial,sans-serif;
+}
 
-    button {
-      width: 100%;
-      margin-top: 18px;
-      padding: 14px;
-      border: none;
-      border-radius: 12px;
-      background: #7c3aed;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+.container{
+    max-width:600px;
+    margin:auto;
+}
 
-    button:disabled {
-      background: #aaa;
-    }
+h1{
+    margin-bottom:20px;
+}
 
-    #message {
-      margin-top: 15px;
-      text-align: center;
-      font-weight: bold;
-    }
+.card{
+    background:white;
+    padding:20px;
+    border-radius:18px;
+    margin-bottom:18px;
+    box-shadow:0 4px 15px rgba(0,0,0,.08);
+}
 
-    #adminPanel {
-      display: none;
-    }
+label{
+    display:block;
+    font-weight:bold;
+    margin-top:14px;
+    margin-bottom:6px;
+}
 
-    .auction {
-      border-top: 1px solid #eee;
-      padding: 15px 0;
-    }
+input,
+textarea{
+    width:100%;
+    padding:13px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    font-size:16px;
+}
 
-    .auction:first-child {
-      border-top: none;
-    }
+textarea{
+    min-height:100px;
+    resize:vertical;
+}
 
-    .price {
-      font-weight: bold;
-      color: #7c3aed;
-    }
-  </style>
+button{
+    width:100%;
+    border:0;
+    border-radius:12px;
+    padding:14px;
+    margin-top:16px;
+    background:#2563eb;
+    color:white;
+    font-size:17px;
+    font-weight:bold;
+}
+
+button:disabled{
+    background:#aaa;
+}
+
+.auction{
+    border:1px solid #ddd;
+    padding:14px;
+    border-radius:12px;
+    margin-top:10px;
+}
+
+.auction img{
+    width:100%;
+    height:180px;
+    object-fit:cover;
+    border-radius:10px;
+    margin-top:10px;
+}
+
+.status{
+    margin-top:15px;
+    text-align:center;
+}
+
+.error{
+    color:#dc2626;
+}
+
+.success{
+    color:#16a34a;
+}
+
+</style>
+
 </head>
 
 <body>
 
 <div class="container">
 
-  <h1>🔐 AuctionUZ Admin</h1>
+<h1>🛠 AuctionUZ Admin</h1>
 
-  <div id="loading" class="card">
-    Admin tekshirilmoqda...
-  </div>
+<div class="card">
 
-  <div id="notAdmin" class="card" style="display:none;">
-    ❌ Siz admin emassiz.
-  </div>
+<h2>Yangi auksion</h2>
 
-  <div id="adminPanel">
+<label>
+Tovar nomi
+</label>
 
-    <div class="card">
-      <h2>➕ Yangi auktsion</h2>
+<input
+    id="productName"
+    type="text"
+    placeholder="Masalan: AirPods Pro"
+/>
 
-      <label>Mahsulot nomi</label>
-      <input
-        id="productName"
-        type="text"
-        placeholder="Masalan: Redmi Note 14"
-      >
 
-      <label>Tavsif</label>
-      <textarea
-        id="description"
-        placeholder="Mahsulot haqida..."
-      ></textarea>
+<label>
+Tavsif
+</label>
 
-      <label>Boshlang‘ich narx</label>
-      <input
-        id="startingPrice"
-        type="number"
-        placeholder="100000"
-      >
+<textarea
+    id="description"
+    placeholder="Tovar haqida..."
+></textarea>
 
-      <label>Auktsion davomiyligi (soniya)</label>
-      <input
-        id="duration"
-        type="number"
-        value="30"
-        min="5"
-      >
 
-      <button id="createButton" onclick="createAuction()">
-        ➕ Auktsion yaratish
-      </button>
+<label>
+Boshlang‘ich narx
+</label>
 
-      <div id="message"></div>
-    </div>
+<input
+    id="startingPrice"
+    type="number"
+    placeholder="100000"
+/>
 
-    <div class="card">
-      <h2>📋 Auktsionlar</h2>
-      <div id="auctionList">
-        Yuklanmoqda...
-      </div>
-    </div>
 
-  </div>
+<label>
+Davomiyligi (sekund)
+</label>
+
+<input
+    id="duration"
+    type="number"
+    value="30"
+/>
+
+
+<label>
+Tovar rasmi
+</label>
+
+<input
+    id="productImage"
+    type="file"
+    accept="image/*"
+/>
+
+
+<button
+    id="createButton"
+>
+    Auksion yaratish
+</button>
+
+
+<div
+    id="status"
+    class="status"
+></div>
 
 </div>
+
+
+<div class="card">
+
+<h2>Auksionlar</h2>
+
+<div id="auctionList">
+    Yuklanmoqda...
+</div>
+
+</div>
+
+</div>
+
 
 <script>
 
 const SUPABASE_URL =
-  "https://ehpbruqswebpenepcmte.supabase.co";
+    "https://ehpbruqswebpenepcmte.supabase.co";
 
 const SUPABASE_KEY =
-  "sb_publishable_pN-XXonPqbmYlX3NeQt4nQ_WOo-0ZNH";
+    "sb_publishable_pN-XXonPqbmYlX3NeQt4nQ_WOo-0ZNH";
 
 const supabaseClient =
-  supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
+    supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
 
-const tg = window.Telegram.WebApp;
+
+const ADMIN_ID =
+    8914025886;
+
+
+const tg =
+    window.Telegram.WebApp;
 
 tg.ready();
 tg.expand();
 
-const ADMIN_ID = 8914025886;
 
-const telegramUser =
-  tg.initDataUnsafe?.user;
-
-async function checkAdmin() {
-
-  const loading =
-    document.getElementById("loading");
-
-  const notAdmin =
-    document.getElementById("notAdmin");
-
-  const panel =
-    document.getElementById("adminPanel");
-
-  if (!telegramUser?.id) {
-
-    loading.style.display = "none";
-    notAdmin.style.display = "block";
-
-    notAdmin.textContent =
-      "❌ Telegram foydalanuvchisi aniqlanmadi.";
-
-    return;
-  }
-
-  if (Number(telegramUser.id) !== ADMIN_ID) {
-
-    loading.style.display = "none";
-    notAdmin.style.display = "block";
-
-    return;
-  }
-
-  loading.style.display = "none";
-  panel.style.display = "block";
-
-  loadAuctions();
-}
+const user =
+    tg.initDataUnsafe &&
+    tg.initDataUnsafe.user
+        ? tg.initDataUnsafe.user
+        : null;
 
 
-async function createAuction() {
+const status =
+    document.getElementById("status");
 
-  const productName =
-    document.getElementById("productName").value.trim();
-
-  const description =
-    document.getElementById("description").value.trim();
-
-  const startingPrice =
-    Number(
-      document.getElementById("startingPrice").value
-    );
-
-  const duration =
-    Number(
-      document.getElementById("duration").value
-    );
-
-  const button =
+const createButton =
     document.getElementById("createButton");
 
-  const message =
-    document.getElementById("message");
-
-
-  if (!productName) {
-    message.textContent =
-      "❌ Mahsulot nomini kiriting.";
-    return;
-  }
-
-  if (!startingPrice || startingPrice <= 0) {
-    message.textContent =
-      "❌ Boshlang‘ich narxni kiriting.";
-    return;
-  }
-
-  if (!duration || duration <= 0) {
-    message.textContent =
-      "❌ Davomiylikni kiriting.";
-    return;
-  }
-
-  button.disabled = true;
-  message.textContent =
-    "⏳ Auktsion yaratilmoqda...";
-
-
-  const endsAt =
-    new Date(
-      Date.now() + duration * 1000
-    ).toISOString();
-
-
-  const { error } =
-    await supabaseClient
-      .from("auctions")
-      .insert({
-
-        product_name: productName,
-
-        description: description,
-
-        starting_price: startingPrice,
-
-        current_price: startingPrice,
-
-        ends_at: endsAt
-
-      });
-
-
-  if (error) {
-
-    console.error(error);
-
-    message.textContent =
-      "❌ Xato: " + error.message;
-
-    button.disabled = false;
-
-    return;
-  }
-
-
-  message.textContent =
-    "✅ Auktsion yaratildi!";
-
-  document.getElementById("productName").value = "";
-  document.getElementById("description").value = "";
-  document.getElementById("startingPrice").value = "";
-  document.getElementById("duration").value = "30";
-
-  button.disabled = false;
-
-  loadAuctions();
-}
-
-
-async function loadAuctions() {
-
-  const list =
+const auctionList =
     document.getElementById("auctionList");
 
-  const { data, error } =
-    await supabaseClient
-      .from("auctions")
-      .select("*")
-      .order("ends_at", {
-        ascending: false
-      });
 
+if(
+    !user ||
+    Number(user.id) !== ADMIN_ID
+){
 
-  if (error) {
-
-    list.innerHTML =
-      "❌ " + error.message;
-
-    return;
-  }
-
-
-  if (!data || data.length === 0) {
-
-    list.innerHTML =
-      "Hozircha auktsionlar yo‘q.";
-
-    return;
-  }
-
-
-  list.innerHTML = data.map(a => {
-
-    const end =
-      new Date(a.ends_at);
-
-    return `
-      <div class="auction">
-
-        <strong>
-          ${escapeHtml(a.product_name)}
-        </strong>
-
-        <br><br>
-
-        💰 Joriy narx:
-        <span class="price">
-          ${Number(a.current_price).toLocaleString()}
-        </span>
-
-        <br>
-
-        ⏱️ Tugash:
-        ${end.toLocaleString()}
-
-      </div>
+    document.body.innerHTML = `
+        <div style="
+            text-align:center;
+            padding:40px;
+            font-family:Arial;
+        ">
+            <h2>❌ Ruxsat yo‘q</h2>
+            <p>Bu sahifa faqat admin uchun.</p>
+        </div>
     `;
 
-  }).join("");
+}else{
+
+
+async function uploadImage(file){
+
+    if(!file){
+
+        return null;
+
+    }
+
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+
+    const fileName =
+        Date.now()
+        + "-"
+        + Math.random()
+            .toString(36)
+            .substring(2)
+        + "."
+        + extension;
+
+
+    const filePath =
+        "auctions/"
+        + fileName;
+
+
+    const {
+        error
+    } = await supabaseClient
+        .storage
+        .from("auction-images")
+        .upload(
+            filePath,
+            file,
+            {
+                cacheControl:"3600",
+                upsert:false
+            }
+        );
+
+
+    if(error){
+
+        throw error;
+
+    }
+
+
+    const {
+        data
+    } =
+        supabaseClient
+            .storage
+            .from("auction-images")
+            .getPublicUrl(
+                filePath
+            );
+
+
+    return data.publicUrl;
+
 }
 
 
-function escapeHtml(text) {
+async function createAuction(){
 
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    const name =
+        document.getElementById(
+            "productName"
+        ).value.trim();
+
+
+    const description =
+        document.getElementById(
+            "description"
+        ).value.trim();
+
+
+    const startingPrice =
+        Number(
+            document.getElementById(
+                "startingPrice"
+            ).value
+        );
+
+
+    const duration =
+        Number(
+            document.getElementById(
+                "duration"
+            ).value
+        );
+
+
+    const file =
+        document.getElementById(
+            "productImage"
+        ).files[0];
+
+
+    if(!name){
+
+        status.innerHTML =
+            '<span class="error">Tovar nomini kiriting.</span>';
+
+        return;
+
+    }
+
+
+    if(!startingPrice || startingPrice <= 0){
+
+        status.innerHTML =
+            '<span class="error">Boshlang‘ich narxni kiriting.</span>';
+
+        return;
+
+    }
+
+
+    if(!duration || duration <= 0){
+
+        status.innerHTML =
+            '<span class="error">Davomiylikni kiriting.</span>';
+
+        return;
+
+    }
+
+
+    createButton.disabled =
+        true;
+
+
+    status.textContent =
+        "Auksion tayyorlanmoqda...";
+
+
+    try{
+
+        let imageUrl = null;
+
+
+        if(file){
+
+            status.textContent =
+                "Rasm yuklanmoqda...";
+
+
+            imageUrl =
+                await uploadImage(file);
+
+        }
+
+
+        const endsAt =
+            new Date(
+                Date.now()
+                + duration * 1000
+            ).toISOString();
+
+
+        status.textContent =
+            "Auksion yaratilmoqda...";
+
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+            .from("auctions")
+            .insert({
+
+                product_name:
+                    name,
+
+                description:
+                    description,
+
+                starting_price:
+                    startingPrice,
+
+                current_price:
+                    startingPrice,
+
+                ends_at:
+                    endsAt,
+
+                image_url:
+                    imageUrl
+
+            })
+            .select()
+            .single();
+
+
+        if(error){
+
+            throw error;
+
+        }
+
+
+        status.innerHTML =
+            '<span class="success">✅ Auksion yaratildi!</span>';
+
+
+        document.getElementById(
+            "productName"
+        ).value = "";
+
+
+        document.getElementById(
+            "description"
+        ).value = "";
+
+
+        document.getElementById(
+            "startingPrice"
+        ).value = "";
+
+
+        document.getElementById(
+            "productImage"
+        ).value = "";
+
+
+        await loadAuctions();
+
+    }catch(error){
+
+        console.error(error);
+
+        status.innerHTML =
+            '<span class="error">Xatolik: '
+            + error.message
+            + '</span>';
+
+    }
+
+
+    createButton.disabled =
+        false;
+
 }
 
 
-checkAdmin();
+async function loadAuctions(){
+
+    const {
+        data,
+        error
+    } = await supabaseClient
+        .from("auctions")
+        .select("*")
+        .order(
+            "id",
+            {
+                ascending:false
+            }
+        );
+
+
+    if(error){
+
+        auctionList.innerHTML =
+            '<span class="error">'
+            + error.message
+            + '</span>';
+
+        return;
+
+    }
+
+
+    if(!data || data.length === 0){
+
+        auctionList.innerHTML =
+            "Hali auksion yo‘q.";
+
+        return;
+
+    }
+
+
+    auctionList.innerHTML =
+        data.map(function(auction){
+
+            const ended =
+                new Date(
+                    auction.ends_at
+                ).getTime()
+                <= Date.now();
+
+
+            return `
+                <div class="auction">
+
+                    <strong>
+                        ${auction.product_name}
+                    </strong>
+
+                    <div>
+                        Boshlang‘ich:
+                        ${Number(
+                            auction.starting_price
+                        ).toLocaleString("uz-UZ")}
+                        so‘m
+                    </div>
+
+                    <div>
+                        Hozirgi:
+                        ${Number(
+                            auction.current_price
+                        ).toLocaleString("uz-UZ")}
+                        so‘m
+                    </div>
+
+                    <div>
+                        Holat:
+                        ${
+                            ended
+                            ? "🔴 Tugagan"
+                            : "🟢 Faol"
+                        }
+                    </div>
+
+                    ${
+                        auction.image_url
+                        ? `
+                            <img
+                                src="${auction.image_url}"
+                                alt="Tovar rasmi"
+                            >
+                        `
+                        : ""
+                    }
+
+                </div>
+            `;
+
+        }).join("");
+
+}
+
+
+createButton.addEventListener(
+    "click",
+    createAuction
+);
+
+
+loadAuctions();
+
+}
 
 </script>
 
 </body>
+
 </html>
