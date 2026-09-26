@@ -375,6 +375,88 @@
 
     async function placeBid() {
 
+  if (!auction) {
+    return;
+  }
+
+  if (timeLeft <= 0) {
+    return;
+  }
+
+  button.disabled = true;
+
+  message.textContent =
+    "⏳ Taklif yuborilmoqda...";
+
+  const newPrice =
+    Number(auction.current_price) + 5000;
+
+  const user =
+    tg.initDataUnsafe?.user;
+
+  const userId =
+    user?.id
+      ? String(user.id)
+      : "unknown";
+
+  const userName =
+    user?.first_name ||
+    "Foydalanuvchi";
+
+  const { data, error } =
+    await supabaseClient
+      .from("auctions")
+      .update({
+        current_price: newPrice
+      })
+      .eq("id", auction.id)
+      .select()
+      .single();
+
+  if (error) {
+
+    console.error(error);
+
+    message.textContent =
+      "❌ Taklif yuborilmadi";
+
+    button.disabled = false;
+
+    return;
+  }
+
+  const { error: bidError } =
+    await supabaseClient
+      .from("bids")
+      .insert({
+        auction_id: auction.id,
+        user_id: userId,
+        user_name: userName,
+        amount: newPrice
+      });
+
+  if (bidError) {
+
+    console.error(bidError);
+
+    message.textContent =
+      "⚠️ Narx saqlandi, lekin bid tarixi saqlanmadi";
+
+  } else {
+
+    message.textContent =
+      "✅ Taklifingiz qabul qilindi!";
+  }
+
+  auction = data;
+
+  showPrice(
+    auction.current_price
+  );
+
+  updateTimer();
+    }
+
       if (!auction) {
         return;
       }
