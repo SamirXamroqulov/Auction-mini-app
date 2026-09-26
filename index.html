@@ -16,7 +16,6 @@
       padding: 0;
       font-family: Arial, sans-serif;
     }
-
     body {
       background: #f4f5f7;
       color: #111827;
@@ -267,6 +266,7 @@
     }
   </style>
 </head>
+
 <body>
 
   <div class="header">
@@ -322,6 +322,7 @@
       <div class="info">
 
         <div>
+
           <div class="label">
             Hozirgi narx
           </div>
@@ -329,9 +330,11 @@
           <div class="price" id="price">
             ...
           </div>
+
         </div>
 
         <div>
+
           <div class="label">
             Tugashiga
           </div>
@@ -339,6 +342,7 @@
           <div class="timer" id="timer">
             --:--:--
           </div>
+
         </div>
 
       </div>
@@ -803,7 +807,6 @@
       winnerImageBox.style.display =
         "flex";
 
-
       const {
         data,
         error
@@ -934,7 +937,9 @@
 
         bidOptions.forEach(
           function(option) {
+
             option.disabled = true;
+
           }
         );
 
@@ -944,7 +949,280 @@
 
         bidOptions.forEach(
           function(option) {
+
             option.disabled = false;
+
+          }
+        );
+
+        if (selectedBid) {
+
+          button.disabled = false;
+
+          button.textContent =
+            "💰 +" +
+            selectedBid.toLocaleString(
+              "uz-UZ"
+            ) +
+            " so‘m taklif qilish";
+
+        } else {
+
+          button.disabled = true;
+
+          button.textContent =
+            "💰 Taklif miqdorini tanlang";
+
+        }
+
+      }
+    }
+
+
+    // ==============================
+    // LOAD AUCTION
+    // ==============================
+
+    async function loadAuction() {
+
+      message.textContent =
+        "Auktsion yuklanmoqda...";
+
+      const {
+        data,
+        error
+      } =
+        await supabaseClient
+          .from("auctions")
+          .select("*")
+          .order(
+            "id",
+            {
+              ascending: false
+            }
+          )
+          .limit(1)
+          .single();
+
+      if (error) {
+
+        console.error(
+          "Auction xatosi:",
+          error
+        );
+
+        message.textContent =
+          "❌ Auktsionni yuklashda xato";
+
+        return;
+      }
+
+      auction = data;
+
+      productName.textContent =
+        auction.product_name ||
+        "Mahsulot";
+
+      description.textContent =
+        auction.description ||
+        "";
+
+      showPrice(
+        auction.current_price
+      );
+
+      // RASM
+
+      showProductImage(
+        auction.image_url
+      );
+
+      productImage.style.display =
+        "flex";
+
+      winnerImageBox.style.display =
+        "none";
+
+      winnerBox.style.display =
+        "none";
+
+      winnerName.textContent = "";
+
+      winnerPrice.textContent = "";
+
+      // BID TANLOVINI TOZALASH
+
+      selectedBid = null;
+
+      bidOptions.forEach(
+        function(option) {
+
+          option.classList.remove(
+            "selected"
+          );
+
+          option.disabled = false;
+
+        }
+      );
+
+      button.disabled = true;
+
+      button.textContent =
+        "💰 Taklif miqdorini tanlang";
+
+      message.textContent = "";
+
+      await loadBids();
+
+      updateTimer();
+
+    }
+
+
+    // ==============================
+    // PLACE BID
+    // ==============================
+
+    async function placeBid() {
+
+      if (!auction) {
+        return;
+      }
+
+      if (timeLeft <= 0) {
+        return;
+      }
+
+      if (!selectedBid) {
+
+        message.textContent =
+          "⚠️ Avval taklif miqdorini tanlang";
+
+        return;
+      }
+
+      button.disabled = true;   
+          if (error) {
+
+        console.error(
+          "Winner xatosi:",
+          error
+        );
+
+        winnerName.textContent =
+          "G‘olibni aniqlashda xato";
+
+        winnerPrice.textContent =
+          "";
+
+        return;
+      }
+
+      if (!data) {
+
+        winnerName.textContent =
+          "Hech kim taklif bermadi.";
+
+        winnerPrice.textContent =
+          "";
+
+        return;
+      }
+
+      winnerName.textContent =
+        "🥇 G‘olib: " +
+        (
+          data.username ||
+          "Foydalanuvchi"
+        );
+
+      winnerPrice.textContent =
+        Number(
+          data.amount
+        ).toLocaleString(
+          "uz-UZ"
+        ) +
+        " so‘m";
+    }
+
+
+    // ==============================
+    // TIMER
+    // ==============================
+
+    function updateTimer() {
+
+      if (
+        !auction ||
+        !auction.ends_at
+      ) {
+        return;
+      }
+
+      const endTime =
+        new Date(
+          auction.ends_at
+        ).getTime();
+
+      const now =
+        Date.now();
+
+      timeLeft =
+        Math.max(
+          0,
+          Math.floor(
+            (
+              endTime - now
+            ) / 1000
+          )
+        );
+
+      const hours =
+        Math.floor(
+          timeLeft / 3600
+        );
+
+      const minutes =
+        Math.floor(
+          (timeLeft % 3600) / 60
+        );
+
+      const seconds =
+        timeLeft % 60;
+
+      timerElement.textContent =
+        String(hours).padStart(2, "0") +
+        ":" +
+        String(minutes).padStart(2, "0") +
+        ":" +
+        String(seconds).padStart(2, "0");
+
+
+      if (timeLeft <= 0) {
+
+        button.disabled = true;
+
+        button.textContent =
+          "⏰ Auktsion tugadi";
+
+        bidOptions.forEach(
+          function(option) {
+
+            option.disabled = true;
+
+          }
+        );
+
+        showWinner();
+
+      } else {
+
+        bidOptions.forEach(
+          function(option) {
+
+            option.disabled = false;
+
           }
         );
 
@@ -1037,12 +1315,11 @@
       winnerImageBox.style.display =
         "none";
 
-      winnerBox.style.display =
-        "none";
+      winnerName.textContent =
+        "";
 
-      winnerName.textContent = "";
-
-      winnerPrice.textContent = "";
+      winnerPrice.textContent =
+        "";
 
       // BID TANLOVINI TOZALASH
 
@@ -1259,7 +1536,6 @@
 
     supabaseClient
       .channel("auction-live")
-
       .on(
         "postgres_changes",
         {
@@ -1349,7 +1625,6 @@
 
     supabaseClient
       .channel("bids-live")
-
       .on(
         "postgres_changes",
         {
