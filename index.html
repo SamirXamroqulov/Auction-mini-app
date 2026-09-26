@@ -98,6 +98,25 @@
       margin-top: 8px;
     }
 
+    .winner-date {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 600;
+    }
+
+    .winner-name {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .winner-price {
+      margin-top: 6px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
     .content {
       padding: 18px;
     }
@@ -252,18 +271,6 @@
       font-weight: 800;
       margin-top: 6px;
     }
-
-    .winner-name {
-      margin-top: 10px;
-      font-size: 18px;
-      font-weight: 700;
-    }
-
-    .winner-price {
-      margin-top: 6px;
-      font-size: 20px;
-      font-weight: 800;
-    }
   </style>
 </head>
 
@@ -305,8 +312,23 @@
       </div>
 
       <div class="winner-image-title">
-        Auktsion yakunlandi
+        Auktsion tugadi
       </div>
+
+      <div
+        class="winner-name"
+        id="winnerName"
+      ></div>
+
+      <div
+        class="winner-price"
+        id="winnerPrice"
+      ></div>
+
+      <div
+        class="winner-date"
+        id="winnerDate"
+      ></div>
     </div>
 
     <div class="content">
@@ -425,33 +447,6 @@
 
       </div>
 
-      <!-- G'OLIB -->
-
-      <div
-        class="winner-box"
-        id="winnerBox"
-      >
-
-        <div class="winner-icon">
-          🏆
-        </div>
-
-        <div class="winner-title">
-          Auktsion tugadi!
-        </div>
-
-        <div
-          class="winner-name"
-          id="winnerName"
-        ></div>
-
-        <div
-          class="winner-price"
-          id="winnerPrice"
-        ></div>
-
-      </div>
-
     </div>
 
   </div>
@@ -531,14 +526,14 @@
     const bidsList =
       document.getElementById("bidsList");
 
-    const winnerBox =
-      document.getElementById("winnerBox");
-
     const winnerName =
       document.getElementById("winnerName");
 
     const winnerPrice =
       document.getElementById("winnerPrice");
+
+    const winnerDate =
+      document.getElementById("winnerDate");
 
     const productImage =
       document.getElementById("productImage");
@@ -793,13 +788,11 @@
       }
 
       if (
-        winnerBox.style.display ===
-        "block"
+        winnerImageBox.style.display ===
+        "flex"
       ) {
         return;
       }
-
-      // RASM O'RNIGA G'OLIB OYNASI
 
       productImage.style.display =
         "none";
@@ -842,11 +835,17 @@
           error
         );
 
+        winnerName.textContent =
+          "G‘olibni aniqlashda xato";
+
+        winnerPrice.textContent =
+          "";
+
+        winnerDate.textContent =
+          "";
+
         return;
       }
-
-      winnerBox.style.display =
-        "block";
 
       if (!data) {
 
@@ -856,15 +855,15 @@
         winnerPrice.textContent =
           "";
 
+        winnerDate.textContent =
+          "";
+
         return;
       }
 
       winnerName.textContent =
-        "🥇 G‘olib: " +
-        (
-          data.username ||
-          "Foydalanuvchi"
-        );
+        data.username ||
+        "Foydalanuvchi";
 
       winnerPrice.textContent =
         Number(
@@ -873,237 +872,61 @@
           "uz-UZ"
         ) +
         " so‘m";
-    }
 
-
-    // ==============================
-    // TIMER
-    // ==============================
-
-    function updateTimer() {
-
-      if (
-        !auction ||
-        !auction.ends_at
-      ) {
-        return;
-      }
-
-      const endTime =
+      const wonDate =
         new Date(
-          auction.ends_at
-        ).getTime();
-
-      const now =
-        Date.now();
-
-      timeLeft =
-        Math.max(
-          0,
-          Math.floor(
-            (
-              endTime - now
-            ) / 1000
-          )
+          data.created_at
         );
 
-      const hours =
-        Math.floor(
-          timeLeft / 3600
-        );
-
-      const minutes =
-        Math.floor(
-          (timeLeft % 3600) / 60
-        );
-
-      const seconds =
-        timeLeft % 60;
-
-      timerElement.textContent =
-        String(hours).padStart(2, "0") +
-        ":" +
-        String(minutes).padStart(2, "0") +
-        ":" +
-        String(seconds).padStart(2, "0");
-
-
-      if (timeLeft <= 0) {
-
-        button.disabled = true;
-
-        button.textContent =
-          "⏰ Auktsion tugadi";
-
-        bidOptions.forEach(
-          function(option) {
-
-            option.disabled = true;
-
+      winnerDate.textContent =
+        "Yutilgan sana: " +
+        wonDate.toLocaleString(
+          "uz-UZ",
+          {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
           }
         );
+          // RASM O'RNIGA G'OLIB OYNASI
 
-        showWinner();
+      productImage.style.display =
+        "none";
 
-      } else {
-
-        bidOptions.forEach(
-          function(option) {
-
-            option.disabled = false;
-
-          }
-        );
-
-        if (selectedBid) {
-
-          button.disabled = false;
-
-          button.textContent =
-            "💰 +" +
-            selectedBid.toLocaleString(
-              "uz-UZ"
-            ) +
-            " so‘m taklif qilish";
-
-        } else {
-
-          button.disabled = true;
-
-          button.textContent =
-            "💰 Taklif miqdorini tanlang";
-
-        }
-
-      }
-    }
-
-
-    // ==============================
-    // LOAD AUCTION
-    // ==============================
-
-    async function loadAuction() {
-
-      message.textContent =
-        "Auktsion yuklanmoqda...";
+      winnerImageBox.style.display =
+        "flex";
 
       const {
         data,
         error
       } =
         await supabaseClient
-          .from("auctions")
-          .select("*")
+          .from("bids")
+          .select(
+            "username, amount, created_at"
+          )
+          .eq(
+            "auction_id",
+            auction.id
+          )
           .order(
-            "id",
+            "amount",
+            {
+              ascending: false
+            }
+          )
+          .order(
+            "created_at",
             {
               ascending: false
             }
           )
           .limit(1)
-          .single();
+          .maybeSingle();
 
       if (error) {
-
-        console.error(
-          "Auction xatosi:",
-          error
-        );
-
-        message.textContent =
-          "❌ Auktsionni yuklashda xato";
-
-        return;
-      }
-
-      auction = data;
-
-      productName.textContent =
-        auction.product_name ||
-        "Mahsulot";
-
-      description.textContent =
-        auction.description ||
-        "";
-
-      showPrice(
-        auction.current_price
-      );
-
-      // RASM
-
-      showProductImage(
-        auction.image_url
-      );
-
-      productImage.style.display =
-        "flex";
-
-      winnerImageBox.style.display =
-        "none";
-
-      winnerBox.style.display =
-        "none";
-
-      winnerName.textContent = "";
-
-      winnerPrice.textContent = "";
-
-      // BID TANLOVINI TOZALASH
-
-      selectedBid = null;
-
-      bidOptions.forEach(
-        function(option) {
-
-          option.classList.remove(
-            "selected"
-          );
-
-          option.disabled = false;
-
-        }
-      );
-
-      button.disabled = true;
-
-      button.textContent =
-        "💰 Taklif miqdorini tanlang";
-
-      message.textContent = "";
-
-      await loadBids();
-
-      updateTimer();
-
-    }
-
-
-    // ==============================
-    // PLACE BID
-    // ==============================
-
-    async function placeBid() {
-
-      if (!auction) {
-        return;
-      }
-
-      if (timeLeft <= 0) {
-        return;
-      }
-
-      if (!selectedBid) {
-
-        message.textContent =
-          "⚠️ Avval taklif miqdorini tanlang";
-
-        return;
-      }
-
-      button.disabled = true;   
-          if (error) {
 
         console.error(
           "Winner xatosi:",
@@ -1116,6 +939,9 @@
         winnerPrice.textContent =
           "";
 
+        winnerDate.textContent =
+          "";
+
         return;
       }
 
@@ -1127,15 +953,15 @@
         winnerPrice.textContent =
           "";
 
+        winnerDate.textContent =
+          "";
+
         return;
       }
 
       winnerName.textContent =
-        "🥇 G‘olib: " +
-        (
-          data.username ||
-          "Foydalanuvchi"
-        );
+        data.username ||
+        "Foydalanuvchi";
 
       winnerPrice.textContent =
         Number(
@@ -1144,6 +970,24 @@
           "uz-UZ"
         ) +
         " so‘m";
+
+      const wonDate =
+        new Date(
+          data.created_at
+        );
+
+      winnerDate.textContent =
+        "Yutilgan sana: " +
+        wonDate.toLocaleString(
+          "uz-UZ",
+          {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          }
+        );
     }
 
 
@@ -1247,7 +1091,6 @@
         }
 
       }
-
     }
 
 
@@ -1319,6 +1162,9 @@
         "";
 
       winnerPrice.textContent =
+        "";
+
+      winnerDate.textContent =
         "";
 
       // BID TANLOVINI TOZALASH
