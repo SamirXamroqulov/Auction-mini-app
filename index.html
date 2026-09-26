@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>AuctionUZ</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-  
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -110,8 +112,9 @@
       cursor: pointer;
     }
 
-    .bid-button:active {
-      transform: scale(0.98);
+    .bid-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .message {
@@ -143,12 +146,12 @@
 
     <div class="content">
 
-      <div class="product-name">
-        Wireless Headphones
+      <div class="product-name" id="productName">
+        Yuklanmoqda...
       </div>
 
-      <div class="description">
-        Yangi mahsulot · 1 dona
+      <div class="description" id="description">
+        Yuklanmoqda...
       </div>
 
       <div class="info">
@@ -159,7 +162,7 @@
           </div>
 
           <div class="price" id="price">
-            100 000 so‘m
+            ...
           </div>
         </div>
 
@@ -169,13 +172,13 @@
           </div>
 
           <div class="timer" id="timer">
-            02:00:00
+            --:--:--
           </div>
         </div>
 
       </div>
 
-      <button class="bid-button" id="bidButton">
+      <button class="bid-button" id="bidButton" disabled>
         💰 +5 000 so‘m taklif qilish
       </button>
 
@@ -185,10 +188,45 @@
   </div>
 
   <script>
+    // ==============================
+    // SUPABASE
+    // ==============================
 
-    let price = 100000;
+    const SUPABASE_URL =
+      "https://ehpbruqswebpenepcmte.supabase.co";
 
-    let timeLeft = 7200;
+    const SUPABASE_KEY =
+      "sb_publishable_pN-XXonPqbmYlX3NeQt4nQ_WOo-0ZNH";
+
+    const supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+
+
+    // ==============================
+    // TELEGRAM
+    // ==============================
+
+    const tg = window.Telegram.WebApp;
+
+    tg.ready();
+    tg.expand();
+
+    const telegramUser =
+      tg.initDataUnsafe?.user;
+
+    if (telegramUser) {
+      document.querySelector(".profile").textContent =
+        "👤 " +
+        (telegramUser.first_name || "Foydalanuvchi");
+    }
+
+
+    // ==============================
+    // ELEMENTS
+    // ==============================
 
     const priceElement =
       document.getElementById("price");
@@ -202,8 +240,57 @@
     const message =
       document.getElementById("message");
 
+    const productName =
+      document.getElementById("productName");
+
+    const description =
+      document.getElementById("description");
+
+
+    // ==============================
+    // AUCTION STATE
+    // ==============================
+
+    let auction = null;
+    let timeLeft = 0;
+
+
+    // ==============================
+    // PRICE DISPLAY
+    // ==============================
+
+    function showPrice(price) {
+
+      const number =
+        Number(price) || 0;
+
+      priceElement.textContent =
+        number.toLocaleString("uz-UZ") +
+        " so‘m";
+    }
+
+
+    // ==============================
+    // TIMER
+    // ==============================
 
     function updateTimer() {
+
+      if (!auction || !auction.ends_at) {
+        return;
+      }
+
+      const endTime =
+        new Date(auction.ends_at).getTime();
+
+      const now =
+        Date.now();
+
+      timeLeft =
+        Math.max(
+          0,
+          Math.floor((endTime - now) / 1000)
+        );
 
       let hours =
         Math.floor(timeLeft / 3600);
@@ -214,67 +301,202 @@
       let seconds =
         timeLeft % 60;
 
-      hours =
-        String(hours).padStart(2, "0");
-
-      minutes =
-        String(minutes).padStart(2, "0");
-
-      seconds =
+      timerElement.textContent =
+        String(hours).padStart(2, "0") +
+        ":" +
+        String(minutes).padStart(2, "0") +
+        ":" +
         String(seconds).padStart(2, "0");
 
-      timerElement.textContent =
-        hours + ":" + minutes + ":" + seconds;
-
-      if (timeLeft > 0) {
-
-        timeLeft--;
-
-      } else {
+      if (timeLeft <= 0) {
 
         button.disabled = true;
 
         button.textContent =
           "⏰ Auktsion tugadi";
 
-      }
+      } else {
 
+        button.disabled = false;
+
+        button.textContent =
+          "💰 +5 000 so‘m taklif qilish";
+      }
     }
 
 
-    button.addEventListener("click", function() {
+    // ==============================
+    // LOAD AUCTION
+    // ==============================
+
+    async function loadAuction() {
+
+      message.textContent =
+        "Auktsion yuklanmoqda...";
+
+      const { data, error } =
+        await supabaseClient
+          .from("auctions")
+          .select("*")
+          .limit(1)
+          .single();
+
+      if (error) {
+
+        console.error(error);
+
+        message.textContent =
+          "❌ Auktsionni yuklashda xato";
+
+        return;
+      }
+
+      auction = data;
+
+      productName.textContent =
+        auction.product_name || "Mahsulot";
+
+      description.textContent =
+        auction.description || "";
+
+      showPrice(
+        auction.current_price
+      );
+
+      message.textContent = "";
+
+      updateTimer();
+    }
+
+
+    // ==============================
+    // BID
+    // ==============================
+
+    async function placeBid() {
+
+      if (!auction) {
+        return;
+      }
 
       if (timeLeft <= 0) {
         return;
       }
 
-      price += 5000;
+      button.disabled = true;
 
-      priceElement.textContent =
-        price.toLocaleString("uz-UZ") + " so‘m";
+      message.textContent =
+        "⏳ Taklif yuborilmoqda...";
+
+      const newPrice =
+        Number(auction.current_price) + 5000;
+
+
+      const { data, error } =
+        await supabaseClient
+          .from("auctions")
+          .update({
+            current_price: newPrice
+          })
+          .eq("id", auction.id)
+          .select()
+          .single();
+
+
+      if (error) {
+
+        console.error(error);
+
+        message.textContent =
+          "❌ Taklif yuborilmadi";
+
+        button.disabled = false;
+
+        return;
+      }
+
+
+      // Bazadan qaytgan haqiqiy narx
+      auction = data;
+
+      showPrice(
+        auction.current_price
+      );
 
       message.textContent =
         "✅ Taklifingiz qabul qilindi!";
 
-    });
+      updateTimer();
+    }
 
 
-    updateTimer();
+    button.addEventListener(
+      "click",
+      placeBid
+    );
 
-    setInterval(updateTimer, 1000);
-const tg = window.Telegram.WebApp;
 
-tg.ready();
-tg.expand();
+    // ==============================
+    // REALTIME
+    // ==============================
 
-const user = tg.initDataUnsafe?.user;
+    supabaseClient
+      .channel("auction-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "auctions"
+        },
+        function(payload) {
 
-if (user) {
-  document.querySelector(".profile").textContent =
-    "👤 " + (user.first_name || "Foydalanuvchi");
-}
- 
+          console.log(
+            "Yangi auction ma'lumoti:",
+            payload.new
+          );
+
+          // Faqat biz ochgan auction
+          if (
+            auction &&
+            payload.new.id === auction.id
+          ) {
+
+            auction = payload.new;
+
+            showPrice(
+              auction.current_price
+            );
+
+            updateTimer();
+
+            message.textContent =
+              "🔄 Narx yangilandi";
+          }
+        }
+      )
+      .subscribe(function(status) {
+
+        console.log(
+          "Realtime:",
+          status
+        );
+
+      });
+
+
+    // ==============================
+    // START
+    // ==============================
+
+    loadAuction();
+
+    setInterval(
+      updateTimer,
+      1000
+    );
+
   </script>
-  
+
 </body>
 </html>
