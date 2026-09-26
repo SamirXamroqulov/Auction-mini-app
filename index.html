@@ -124,6 +124,86 @@
       font-weight: 600;
       min-height: 20px;
     }
+
+    /* ==============================
+       BIDS LIST
+       ============================== */
+
+    .bids-box {
+      margin-top: 18px;
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 16px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .bids-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .bid-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .bid-item:last-child {
+      border-bottom: none;
+    }
+
+    .bid-user {
+      font-weight: 700;
+    }
+
+    .bid-amount {
+      font-weight: 800;
+    }
+
+    .no-bids {
+      color: #6b7280;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    /* ==============================
+       WINNER BOX
+       ============================== */
+
+    .winner-box {
+      display: none;
+      margin-top: 16px;
+      padding: 18px;
+      background: #fff7ed;
+      border: 2px solid #f59e0b;
+      border-radius: 16px;
+      text-align: center;
+    }
+
+    .winner-icon {
+      font-size: 40px;
+    }
+
+    .winner-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-top: 6px;
+    }
+
+    .winner-name {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .winner-price {
+      margin-top: 6px;
+      font-size: 20px;
+      font-weight: 800;
+    }
   </style>
 </head>
 
@@ -184,10 +264,53 @@
 
       <div class="message" id="message"></div>
 
+
+      <!-- ==============================
+           BIDS LIST
+           ============================== -->
+
+      <div class="bids-box">
+
+        <div class="bids-title">
+          👥 Takliflar
+        </div>
+
+        <div id="bidsList">
+          <div class="no-bids">
+            Hali taklif yo‘q
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ==============================
+           WINNER
+           ============================== -->
+
+      <div class="winner-box" id="winnerBox">
+
+        <div class="winner-icon">
+          🏆
+        </div>
+
+        <div class="winner-title">
+          Auktsion tugadi!
+        </div>
+
+        <div class="winner-name" id="winnerName">
+        </div>
+
+        <div class="winner-price" id="winnerPrice">
+        </div>
+
+      </div>
+
     </div>
   </div>
 
   <script>
+
     // ==============================
     // SUPABASE
     // ==============================
@@ -218,9 +341,14 @@
       tg.initDataUnsafe?.user;
 
     if (telegramUser) {
+
+      const telegramName =
+        telegramUser.username
+          ? "@" + telegramUser.username
+          : (telegramUser.first_name || "Foydalanuvchi");
+
       document.querySelector(".profile").textContent =
-        "👤 " +
-        (telegramUser.first_name || "Foydalanuvchi");
+        "👤 " + telegramName;
     }
 
 
@@ -245,6 +373,18 @@
 
     const description =
       document.getElementById("description");
+
+    const bidsList =
+      document.getElementById("bidsList");
+
+    const winnerBox =
+      document.getElementById("winnerBox");
+
+    const winnerName =
+      document.getElementById("winnerName");
+
+    const winnerPrice =
+      document.getElementById("winnerPrice");
 
 
     // ==============================
@@ -271,6 +411,198 @@
 
 
     // ==============================
+    // LOAD BIDS
+    // ==============================
+
+    async function loadBids() {
+
+      if (!auction) {
+        return;
+      }
+
+      const { data, error } =
+        await supabaseClient
+          .from("bids")
+          .select(
+            "user_name, username, amount, created_at"
+          )
+          .eq(
+            "auction_id",
+            auction.id
+          )
+          .order(
+            "amount",
+            {
+              ascending: false
+            }
+          );
+
+      if (error) {
+
+        console.error(
+          "Bids yuklash xatosi:",
+          error
+        );
+
+        return;
+      }
+
+
+      bidsList.innerHTML = "";
+
+
+      if (!data || data.length === 0) {
+
+        bidsList.innerHTML =
+          '<div class="no-bids">Hali taklif yo‘q</div>';
+
+        return;
+      }
+
+
+      data.forEach(function(bid) {
+
+        const item =
+          document.createElement("div");
+
+        item.className =
+          "bid-item";
+
+
+        const user =
+          document.createElement("div");
+
+        user.className =
+          "bid-user";
+
+
+        const displayName =
+          bid.username
+            ? "@" + bid.username
+            : (
+                bid.user_name ||
+                "Foydalanuvchi"
+              );
+
+        user.textContent =
+          displayName;
+
+
+        const amount =
+          document.createElement("div");
+
+        amount.className =
+          "bid-amount";
+
+        amount.textContent =
+          Number(
+            bid.amount
+          ).toLocaleString("uz-UZ") +
+          " so‘m";
+
+
+        item.appendChild(user);
+
+        item.appendChild(amount);
+
+        bidsList.appendChild(item);
+      });
+    }
+
+
+    // ==============================
+    // SHOW WINNER
+    // ==============================
+
+    async function showWinner() {
+
+      if (!auction) {
+        return;
+      }
+
+      if (
+        winnerBox.style.display === "block"
+      ) {
+        return;
+      }
+
+
+      const { data, error } =
+        await supabaseClient
+          .from("bids")
+          .select(
+            "user_name, username, amount"
+          )
+          .eq(
+            "auction_id",
+            auction.id
+          )
+          .order(
+            "amount",
+            {
+              ascending: false
+            }
+          )
+          .order(
+            "created_at",
+            {
+              ascending: false
+            }
+          )
+          .limit(1)
+          .maybeSingle();
+
+
+      if (error) {
+
+        console.error(
+          "Winner xatosi:",
+          error
+        );
+
+        return;
+      }
+
+
+      winnerBox.style.display =
+        "block";
+
+
+      if (!data) {
+
+        winnerName.textContent =
+          "Hech kim taklif bermadi.";
+
+        winnerPrice.textContent =
+          "";
+
+        return;
+      }
+
+
+      const displayName =
+        data.username
+          ? "@" + data.username
+          : (
+              data.user_name ||
+              "Foydalanuvchi"
+            );
+
+
+      winnerName.textContent =
+        "🥇 G‘olib: " +
+        displayName;
+
+
+      winnerPrice.textContent =
+        Number(
+          data.amount
+        ).toLocaleString("uz-UZ") +
+        " so‘m";
+    }
+
+
+    // ==============================
     // TIMER
     // ==============================
 
@@ -280,26 +612,41 @@
         return;
       }
 
+
       const endTime =
-        new Date(auction.ends_at).getTime();
+        new Date(
+          auction.ends_at
+        ).getTime();
+
 
       const now =
         Date.now();
 
+
       timeLeft =
         Math.max(
           0,
-          Math.floor((endTime - now) / 1000)
+          Math.floor(
+            (endTime - now) / 1000
+          )
         );
 
+
       let hours =
-        Math.floor(timeLeft / 3600);
+        Math.floor(
+          timeLeft / 3600
+        );
+
 
       let minutes =
-        Math.floor((timeLeft % 3600) / 60);
+        Math.floor(
+          (timeLeft % 3600) / 60
+        );
+
 
       let seconds =
         timeLeft % 60;
+
 
       timerElement.textContent =
         String(hours).padStart(2, "0") +
@@ -308,12 +655,17 @@
         ":" +
         String(seconds).padStart(2, "0");
 
+
       if (timeLeft <= 0) {
 
         button.disabled = true;
 
         button.textContent =
           "⏰ Auktsion tugadi";
+
+
+        showWinner();
+
 
       } else {
 
@@ -334,12 +686,14 @@
       message.textContent =
         "Auktsion yuklanmoqda...";
 
+
       const { data, error } =
         await supabaseClient
           .from("auctions")
           .select("*")
           .limit(1)
           .single();
+
 
       if (error) {
 
@@ -351,19 +705,31 @@
         return;
       }
 
+
       auction = data;
 
+
       productName.textContent =
-        auction.product_name || "Mahsulot";
+        auction.product_name ||
+        "Mahsulot";
+
 
       description.textContent =
-        auction.description || "";
+        auction.description ||
+        "";
+
 
       showPrice(
         auction.current_price
       );
 
-      message.textContent = "";
+
+      message.textContent =
+        "";
+
+
+      await loadBids();
+
 
       updateTimer();
     }
@@ -379,17 +745,23 @@
         return;
       }
 
+
       if (timeLeft <= 0) {
         return;
       }
 
+
       button.disabled = true;
+
 
       message.textContent =
         "⏳ Taklif yuborilmoqda...";
 
+
       const newPrice =
-        Number(auction.current_price) + 5000;
+        Number(
+          auction.current_price
+        ) + 5000;
 
 
       const { data, error } =
@@ -398,7 +770,10 @@
           .update({
             current_price: newPrice
           })
-          .eq("id", auction.id)
+          .eq(
+            "id",
+            auction.id
+          )
           .select()
           .single();
 
@@ -407,10 +782,14 @@
 
         console.error(error);
 
+
         message.textContent =
           "❌ Taklif yuborilmadi";
 
-        button.disabled = false;
+
+        button.disabled =
+          false;
+
 
         return;
       }
@@ -419,12 +798,84 @@
       // Bazadan qaytgan haqiqiy narx
       auction = data;
 
+
       showPrice(
         auction.current_price
       );
 
-      message.textContent =
-        "✅ Taklifingiz qabul qilindi!";
+
+      // ==============================
+      // TELEGRAM USER
+      // ==============================
+
+      const user =
+        tg.initDataUnsafe?.user;
+
+
+      const userId =
+        user?.id
+          ? String(user.id)
+          : "unknown";
+
+
+      const userName =
+        user?.first_name ||
+        "Foydalanuvchi";
+
+
+      const username =
+        user?.username ||
+        null;
+
+
+      // ==============================
+      // BID HISTORY
+      // ==============================
+
+      const { error: bidError } =
+        await supabaseClient
+          .from("bids")
+          .insert({
+
+            auction_id:
+              auction.id,
+
+            user_id:
+              userId,
+
+            user_name:
+              userName,
+
+            username:
+              username,
+
+            amount:
+              auction.current_price
+
+          });
+
+
+      if (bidError) {
+
+        console.error(
+          "Bid saqlash xatosi:",
+          bidError
+        );
+
+
+        message.textContent =
+          "⚠️ Narx saqlandi, lekin bid tarixi saqlanmadi";
+
+
+      } else {
+
+        message.textContent =
+          "✅ Taklifingiz qabul qilindi!";
+
+
+        await loadBids();
+      }
+
 
       updateTimer();
     }
@@ -437,11 +888,12 @@
 
 
     // ==============================
-    // REALTIME
+    // REALTIME AUCTION
     // ==============================
 
     supabaseClient
       .channel("auction-live")
+
       .on(
         "postgres_changes",
         {
@@ -449,6 +901,7 @@
           schema: "public",
           table: "auctions"
         },
+
         function(payload) {
 
           console.log(
@@ -456,33 +909,86 @@
             payload.new
           );
 
+
           // Faqat biz ochgan auction
           if (
             auction &&
             payload.new.id === auction.id
           ) {
 
-            auction = payload.new;
+            auction =
+              payload.new;
+
 
             showPrice(
               auction.current_price
             );
 
+
             updateTimer();
+
 
             message.textContent =
               "🔄 Narx yangilandi";
           }
         }
       )
-      .subscribe(function(status) {
 
-        console.log(
-          "Realtime:",
-          status
-        );
+      .subscribe(
+        function(status) {
 
-      });
+          console.log(
+            "Realtime:",
+            status
+          );
+
+        }
+      );
+
+
+    // ==============================
+    // REALTIME BIDS
+    // ==============================
+
+    supabaseClient
+      .channel("bids-live")
+
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "bids"
+        },
+
+        function(payload) {
+
+          console.log(
+            "Yangi bid:",
+            payload.new
+          );
+
+
+          if (
+            auction &&
+            payload.new.auction_id === auction.id
+          ) {
+
+            loadBids();
+          }
+        }
+      )
+
+      .subscribe(
+        function(status) {
+
+          console.log(
+            "Bids realtime:",
+            status
+          );
+
+        }
+      );
 
 
     // ==============================
@@ -490,6 +996,7 @@
     // ==============================
 
     loadAuction();
+
 
     setInterval(
       updateTimer,
@@ -499,4 +1006,4 @@
   </script>
 
 </body>
-</html>
+</html>          
