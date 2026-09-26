@@ -97,4 +97,406 @@
 
     .timer {
       font-size: 20px;
-      font-weight: 
+      font-weight: 700;
+    }
+
+    .bid-button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      background: #229ed9;
+      color: white;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .bid-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 12px;
+      color: #16a34a;
+      font-weight: 600;
+      min-height: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    <div class="logo">🔨 AuctionUZ</div>
+    <div class="profile">👤 Profil</div>
+  </div>
+
+  <div class="section-title">
+    🔥 Jonli auktsion
+  </div>
+
+  <div class="auction-card">
+
+    <div class="product-image">
+      🎧
+    </div>
+
+    <div class="content">
+
+      <div class="product-name" id="productName">
+        Yuklanmoqda...
+      </div>
+
+      <div class="description" id="description">
+        Yuklanmoqda...
+      </div>
+
+      <div class="info">
+
+        <div>
+          <div class="label">
+            Hozirgi narx
+          </div>
+
+          <div class="price" id="price">
+            ...
+          </div>
+        </div>
+
+        <div>
+          <div class="label">
+            Tugashiga
+          </div>
+
+          <div class="timer" id="timer">
+            --:--:--
+          </div>
+        </div>
+
+      </div>
+
+      <button class="bid-button" id="bidButton" disabled>
+        💰 +5 000 so‘m taklif qilish
+      </button>
+
+      <div class="message" id="message"></div>
+
+    </div>
+  </div>
+
+  <script>
+    // ==============================
+    // SUPABASE
+    // ==============================
+
+    const SUPABASE_URL =
+      "https://ehpbruqswebpenepcmte.supabase.co";
+
+    const SUPABASE_KEY =
+      "sb_publishable_pN-XXonPqbmYlX3NeQt4nQ_WOo-0ZNH";
+
+    const supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+
+
+    // ==============================
+    // TELEGRAM
+    // ==============================
+
+    const tg = window.Telegram.WebApp;
+
+    tg.ready();
+    tg.expand();
+
+    const telegramUser =
+      tg.initDataUnsafe?.user;
+
+    if (telegramUser) {
+      document.querySelector(".profile").textContent =
+        "👤 " +
+        (telegramUser.first_name || "Foydalanuvchi");
+    }
+
+
+    // ==============================
+    // ELEMENTS
+    // ==============================
+
+    const priceElement =
+      document.getElementById("price");
+
+    const timerElement =
+      document.getElementById("timer");
+
+    const button =
+      document.getElementById("bidButton");
+
+    const message =
+      document.getElementById("message");
+
+    const productName =
+      document.getElementById("productName");
+
+    const description =
+      document.getElementById("description");
+
+
+    // ==============================
+    // AUCTION STATE
+    // ==============================
+
+    let auction = null;
+    let timeLeft = 0;
+
+
+    // ==============================
+    // PRICE DISPLAY
+    // ==============================
+
+    function showPrice(price) {
+
+      const number =
+        Number(price) || 0;
+
+      priceElement.textContent =
+        number.toLocaleString("uz-UZ") +
+        " so‘m";
+    }
+
+
+    // ==============================
+    // TIMER
+    // ==============================
+
+    function updateTimer() {
+
+      if (!auction || !auction.ends_at) {
+        return;
+      }
+
+      const endTime =
+        new Date(auction.ends_at).getTime();
+
+      const now =
+        Date.now();
+
+      timeLeft =
+        Math.max(
+          0,
+          Math.floor((endTime - now) / 1000)
+        );
+
+      let hours =
+        Math.floor(timeLeft / 3600);
+
+      let minutes =
+        Math.floor((timeLeft % 3600) / 60);
+
+      let seconds =
+        timeLeft % 60;
+
+      timerElement.textContent =
+        String(hours).padStart(2, "0") +
+        ":" +
+        String(minutes).padStart(2, "0") +
+        ":" +
+        String(seconds).padStart(2, "0");
+
+      if (timeLeft <= 0) {
+
+        button.disabled = true;
+
+        button.textContent =
+          "⏰ Auktsion tugadi";
+
+      } else {
+
+        button.disabled = false;
+
+        button.textContent =
+          "💰 +5 000 so‘m taklif qilish";
+      }
+    }
+
+
+    // ==============================
+    // LOAD AUCTION
+    // ==============================
+
+    async function loadAuction() {
+
+      message.textContent =
+        "Auktsion yuklanmoqda...";
+
+      const { data, error } =
+        await supabaseClient
+          .from("auctions")
+          .select("*")
+          .limit(1)
+          .single();
+
+      if (error) {
+
+        console.error(error);
+
+        message.textContent =
+          "❌ Auktsionni yuklashda xato";
+
+        return;
+      }
+
+      auction = data;
+
+      productName.textContent =
+        auction.product_name || "Mahsulot";
+
+      description.textContent =
+        auction.description || "";
+
+      showPrice(
+        auction.current_price
+      );
+
+      message.textContent = "";
+
+      updateTimer();
+    }
+
+
+    // ==============================
+    // BID
+    // ==============================
+
+    async function placeBid() {
+
+      if (!auction) {
+        return;
+      }
+
+      if (timeLeft <= 0) {
+        return;
+      }
+
+      button.disabled = true;
+
+      message.textContent =
+        "⏳ Taklif yuborilmoqda...";
+
+      const newPrice =
+        Number(auction.current_price) + 5000;
+
+
+      const { data, error } =
+        await supabaseClient
+          .from("auctions")
+          .update({
+            current_price: newPrice
+          })
+          .eq("id", auction.id)
+          .select()
+          .single();
+
+
+      if (error) {
+
+        console.error(error);
+
+        message.textContent =
+          "❌ Taklif yuborilmadi";
+
+        button.disabled = false;
+
+        return;
+      }
+
+
+      // Bazadan qaytgan haqiqiy narx
+      auction = data;
+
+      showPrice(
+        auction.current_price
+      );
+
+      message.textContent =
+        "✅ Taklifingiz qabul qilindi!";
+
+      updateTimer();
+    }
+
+
+    button.addEventListener(
+      "click",
+      placeBid
+    );
+
+
+    // ==============================
+    // REALTIME
+    // ==============================
+
+    supabaseClient
+      .channel("auction-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "auctions"
+        },
+        function(payload) {
+
+          console.log(
+            "Yangi auction ma'lumoti:",
+            payload.new
+          );
+
+          // Faqat biz ochgan auction
+          if (
+            auction &&
+            payload.new.id === auction.id
+          ) {
+
+            auction = payload.new;
+
+            showPrice(
+              auction.current_price
+            );
+
+            updateTimer();
+
+            message.textContent =
+              "🔄 Narx yangilandi";
+          }
+        }
+      )
+      .subscribe(function(status) {
+
+        console.log(
+          "Realtime:",
+          status
+        );
+
+      });
+
+
+    // ==============================
+    // START
+    // ==============================
+
+    loadAuction();
+
+    setInterval(
+      updateTimer,
+      1000
+    );
+
+  </script>
+
+</body>
+</html>
