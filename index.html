@@ -64,7 +64,39 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      overflow: hidden;
+    }
+
+    .product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .image-placeholder {
       font-size: 80px;
+    }
+
+    .winner-image-box {
+      display: none;
+      height: 220px;
+      background: #fff7ed;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .winner-image-icon {
+      font-size: 60px;
+    }
+
+    .winner-image-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-top: 8px;
     }
 
     .content {
@@ -102,6 +134,34 @@
     .timer {
       font-size: 20px;
       font-weight: 700;
+    }
+
+    .bid-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .bid-option {
+      padding: 12px 8px;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      background: white;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .bid-option.selected {
+      background: #229ed9;
+      border-color: #229ed9;
+      color: white;
+    }
+
+    .bid-option:last-child {
+      grid-column: span 2;
     }
 
     .bid-button {
@@ -207,7 +267,6 @@
     }
   </style>
 </head>
-
 <body>
 
   <div class="header">
@@ -228,8 +287,26 @@
 
   <div class="auction-card">
 
-    <div class="product-image">
-      🎧
+    <div
+      class="product-image"
+      id="productImage"
+    >
+      <div class="image-placeholder">
+        🎧
+      </div>
+    </div>
+
+    <div
+      class="winner-image-box"
+      id="winnerImageBox"
+    >
+      <div class="winner-image-icon">
+        🏆
+      </div>
+
+      <div class="winner-image-title">
+        Auktsion yakunlandi
+      </div>
     </div>
 
     <div class="content">
@@ -245,7 +322,6 @@
       <div class="info">
 
         <div>
-
           <div class="label">
             Hozirgi narx
           </div>
@@ -253,11 +329,9 @@
           <div class="price" id="price">
             ...
           </div>
-
         </div>
 
         <div>
-
           <div class="label">
             Tugashiga
           </div>
@@ -265,8 +339,56 @@
           <div class="timer" id="timer">
             --:--:--
           </div>
-
         </div>
+
+      </div>
+
+      <!-- BID MIQDORLARI -->
+
+      <div
+        class="bid-options"
+        id="bidOptions"
+      >
+
+        <button
+          type="button"
+          class="bid-option"
+          data-bid="5000"
+        >
+          +5 000
+        </button>
+
+        <button
+          type="button"
+          class="bid-option"
+          data-bid="10000"
+        >
+          +10 000
+        </button>
+
+        <button
+          type="button"
+          class="bid-option"
+          data-bid="25000"
+        >
+          +25 000
+        </button>
+
+        <button
+          type="button"
+          class="bid-option"
+          data-bid="50000"
+        >
+          +50 000
+        </button>
+
+        <button
+          type="button"
+          class="bid-option"
+          data-bid="100000"
+        >
+          +100 000
+        </button>
 
       </div>
 
@@ -275,7 +397,7 @@
         id="bidButton"
         disabled
       >
-        💰 +5 000 so‘m taklif qilish
+        💰 Taklif miqdorini tanlang
       </button>
 
       <div
@@ -298,6 +420,8 @@
         </div>
 
       </div>
+
+      <!-- G'OLIB -->
 
       <div
         class="winner-box"
@@ -327,6 +451,7 @@
     </div>
 
   </div>
+
 
   <script>
 
@@ -382,67 +507,58 @@
     // ==============================
 
     const priceElement =
-      document.getElementById(
-        "price"
-      );
+      document.getElementById("price");
 
     const timerElement =
-      document.getElementById(
-        "timer"
-      );
+      document.getElementById("timer");
 
     const button =
-      document.getElementById(
-        "bidButton"
-      );
+      document.getElementById("bidButton");
 
     const message =
-      document.getElementById(
-        "message"
-      );
+      document.getElementById("message");
 
     const productName =
-      document.getElementById(
-        "productName"
-      );
+      document.getElementById("productName");
 
     const description =
-      document.getElementById(
-        "description"
-      );
+      document.getElementById("description");
 
     const bidsList =
-      document.getElementById(
-        "bidsList"
-      );
+      document.getElementById("bidsList");
 
     const winnerBox =
-      document.getElementById(
-        "winnerBox"
-      );
+      document.getElementById("winnerBox");
 
     const winnerName =
-      document.getElementById(
-        "winnerName"
-      );
+      document.getElementById("winnerName");
 
     const winnerPrice =
-      document.getElementById(
-        "winnerPrice"
-      );
+      document.getElementById("winnerPrice");
+
+    const productImage =
+      document.getElementById("productImage");
+
+    const winnerImageBox =
+      document.getElementById("winnerImageBox");
+
+    const bidOptions =
+      document.querySelectorAll(".bid-option");
 
 
     // ==============================
-    // AUCTION STATE
+    // STATE
     // ==============================
 
     let auction = null;
 
     let timeLeft = 0;
 
+    let selectedBid = null;
+
 
     // ==============================
-    // PRICE DISPLAY
+    // PRICE
     // ==============================
 
     function showPrice(price) {
@@ -451,11 +567,110 @@
         Number(price) || 0;
 
       priceElement.textContent =
-        number.toLocaleString(
-          "uz-UZ"
-        ) +
+        number.toLocaleString("uz-UZ") +
         " so‘m";
     }
+
+
+    // ==============================
+    // PRODUCT IMAGE
+    // ==============================
+
+    function showProductImage(url) {
+
+      productImage.innerHTML = "";
+
+      if (!url) {
+
+        const placeholder =
+          document.createElement("div");
+
+        placeholder.className =
+          "image-placeholder";
+
+        placeholder.textContent =
+          "🎧";
+
+        productImage.appendChild(
+          placeholder
+        );
+
+        return;
+      }
+
+      const img =
+        document.createElement("img");
+
+      img.src = url;
+
+      img.alt =
+        auction?.product_name ||
+        "Mahsulot rasmi";
+
+      img.onerror =
+        function() {
+
+          productImage.innerHTML =
+            '<div class="image-placeholder">🎧</div>';
+
+        };
+
+      productImage.appendChild(img);
+    }
+
+
+    // ==============================
+    // BID OPTION
+    // ==============================
+
+    bidOptions.forEach(
+      function(option) {
+
+        option.addEventListener(
+          "click",
+          function() {
+
+            if (
+              !auction ||
+              timeLeft <= 0
+            ) {
+              return;
+            }
+
+            bidOptions.forEach(
+              function(item) {
+
+                item.classList.remove(
+                  "selected"
+                );
+
+              }
+            );
+
+            option.classList.add(
+              "selected"
+            );
+
+            selectedBid =
+              Number(
+                option.dataset.bid
+              );
+
+            button.disabled =
+              false;
+
+            button.textContent =
+              "💰 +" +
+              selectedBid.toLocaleString(
+                "uz-UZ"
+              ) +
+              " so‘m taklif qilish";
+
+          }
+        );
+
+      }
+    );
 
 
     // ==============================
@@ -501,8 +716,7 @@
         return;
       }
 
-      bidsList.innerHTML =
-        "";
+      bidsList.innerHTML = "";
 
       if (
         !data ||
@@ -519,25 +733,19 @@
         function(bid, index) {
 
           const item =
-            document.createElement(
-              "div"
-            );
+            document.createElement("div");
 
           item.className =
             "bid-item";
 
           const user =
-            document.createElement(
-              "div"
-            );
+            document.createElement("div");
 
           user.className =
             "bid-user";
 
           user.textContent =
-            (
-              index + 1
-            ) +
+            (index + 1) +
             ". " +
             (
               bid.username ||
@@ -545,9 +753,7 @@
             );
 
           const amount =
-            document.createElement(
-              "div"
-            );
+            document.createElement("div");
 
           amount.className =
             "bid-amount";
@@ -560,17 +766,11 @@
             ) +
             " so‘m";
 
-          item.appendChild(
-            user
-          );
+          item.appendChild(user);
 
-          item.appendChild(
-            amount
-          );
+          item.appendChild(amount);
 
-          bidsList.appendChild(
-            item
-          );
+          bidsList.appendChild(item);
 
         }
       );
@@ -579,7 +779,7 @@
 
 
     // ==============================
-    // SHOW WINNER
+    // WINNER
     // ==============================
 
     async function showWinner() {
@@ -594,6 +794,15 @@
       ) {
         return;
       }
+
+      // RASM O'RNIGA G'OLIB OYNASI
+
+      productImage.style.display =
+        "none";
+
+      winnerImageBox.style.display =
+        "flex";
+
 
       const {
         data,
@@ -702,55 +911,63 @@
 
       const minutes =
         Math.floor(
-          (
-            timeLeft % 3600
-          ) / 60
+          (timeLeft % 3600) / 60
         );
 
       const seconds =
         timeLeft % 60;
 
       timerElement.textContent =
-        String(
-          hours
-        ).padStart(
-          2,
-          "0"
-        ) +
+        String(hours).padStart(2, "0") +
         ":" +
-        String(
-          minutes
-        ).padStart(
-          2,
-          "0"
-        ) +
+        String(minutes).padStart(2, "0") +
         ":" +
-        String(
-          seconds
-        ).padStart(
-          2,
-          "0"
-        );
+        String(seconds).padStart(2, "0");
 
-      if (
-        timeLeft <= 0
-      ) {
 
-        button.disabled =
-          true;
+      if (timeLeft <= 0) {
+
+        button.disabled = true;
 
         button.textContent =
           "⏰ Auktsion tugadi";
+
+        bidOptions.forEach(
+          function(option) {
+            option.disabled = true;
+          }
+        );
 
         showWinner();
 
       } else {
 
-        button.disabled =
-          false;
+        bidOptions.forEach(
+          function(option) {
+            option.disabled = false;
+          }
+        );
 
-        button.textContent =
-          "💰 +5 000 so‘m taklif qilish";
+        if (selectedBid) {
+
+          button.disabled = false;
+
+          button.textContent =
+            "💰 +" +
+            selectedBid.toLocaleString(
+              "uz-UZ"
+            ) +
+            " so‘m taklif qilish";
+
+        } else {
+
+          button.disabled = true;
+
+          button.textContent =
+            "💰 Taklif miqdorini tanlang";
+
+        }
+
       }
 
     }
@@ -794,8 +1011,7 @@
         return;
       }
 
-      auction =
-        data;
+      auction = data;
 
       productName.textContent =
         auction.product_name ||
@@ -809,17 +1025,47 @@
         auction.current_price
       );
 
+      // RASM
+
+      showProductImage(
+        auction.image_url
+      );
+
+      productImage.style.display =
+        "flex";
+
+      winnerImageBox.style.display =
+        "none";
+
       winnerBox.style.display =
         "none";
 
-      winnerName.textContent =
-        "";
+      winnerName.textContent = "";
 
-      winnerPrice.textContent =
-        "";
+      winnerPrice.textContent = "";
 
-      message.textContent =
-        "";
+      // BID TANLOVINI TOZALASH
+
+      selectedBid = null;
+
+      bidOptions.forEach(
+        function(option) {
+
+          option.classList.remove(
+            "selected"
+          );
+
+          option.disabled = false;
+
+        }
+      );
+
+      button.disabled = true;
+
+      button.textContent =
+        "💰 Taklif miqdorini tanlang";
+
+      message.textContent = "";
 
       await loadBids();
 
@@ -842,8 +1088,15 @@
         return;
       }
 
-      button.disabled =
-        true;
+      if (!selectedBid) {
+
+        message.textContent =
+          "⚠️ Avval taklif miqdorini tanlang";
+
+        return;
+      }
+
+      button.disabled = true;
 
       message.textContent =
         "⏳ Taklif yuborilmoqda...";
@@ -852,7 +1105,10 @@
       const newPrice =
         Number(
           auction.current_price
-        ) + 5000;
+        ) +
+        Number(
+          selectedBid
+        );
 
 
       // ==============================
@@ -866,8 +1122,7 @@
         await supabaseClient
           .from("auctions")
           .update({
-            current_price:
-              newPrice
+            current_price: newPrice
           })
           .eq(
             "id",
@@ -886,14 +1141,12 @@
         message.textContent =
           "❌ Taklif yuborilmadi";
 
-        button.disabled =
-          false;
+        button.disabled = false;
 
         return;
       }
 
-      auction =
-        data;
+      auction = data;
 
       showPrice(
         auction.current_price
@@ -907,7 +1160,6 @@
       const user =
         tg.initDataUnsafe?.user;
 
-
       if (!user?.id) {
 
         console.error(
@@ -917,18 +1169,13 @@
         message.textContent =
           "❌ Telegram foydalanuvchisi aniqlanmadi";
 
-        button.disabled =
-          false;
+        button.disabled = false;
 
         return;
       }
 
-
       const userTelegramId =
-        Number(
-          user.id
-        );
-
+        Number(user.id);
 
       const userUsername =
         user?.username
@@ -940,7 +1187,7 @@
 
 
       // ==============================
-      // SAVE BID HISTORY
+      // SAVE BID
       // ==============================
 
       const {
@@ -981,16 +1228,13 @@
             "Noma’lum xato"
           );
 
-        button.disabled =
-          false;
+        button.disabled = false;
 
         return;
       }
 
-
       message.textContent =
         "✅ Taklifingiz qabul qilindi!";
-
 
       await loadBids();
 
@@ -1014,21 +1258,14 @@
     // ==============================
 
     supabaseClient
-      .channel(
-        "auction-live"
-      )
+      .channel("auction-live")
 
       .on(
         "postgres_changes",
         {
-          event:
-            "UPDATE",
-
-          schema:
-            "public",
-
-          table:
-            "auctions"
+          event: "UPDATE",
+          schema: "public",
+          table: "auctions"
         },
 
         function(payload) {
@@ -1037,7 +1274,6 @@
             "Yangi auction ma'lumoti:",
             payload.new
           );
-
 
           if (
             auction &&
@@ -1052,6 +1288,16 @@
               auction.current_price
             );
 
+            if (
+              payload.new.image_url
+            ) {
+
+              showProductImage(
+                payload.new.image_url
+              );
+
+            }
+
             updateTimer();
 
             loadBids();
@@ -1062,20 +1308,15 @@
       )
 
       // ==============================
-      // YANGI AUCTION YARATILSA
+      // YANGI AUCTION
       // ==============================
 
       .on(
         "postgres_changes",
         {
-          event:
-            "INSERT",
-
-          schema:
-            "public",
-
-          table:
-            "auctions"
+          event: "INSERT",
+          schema: "public",
+          table: "auctions"
         },
 
         function(payload) {
@@ -1107,21 +1348,14 @@
     // ==============================
 
     supabaseClient
-      .channel(
-        "bids-live"
-      )
+      .channel("bids-live")
 
       .on(
         "postgres_changes",
         {
-          event:
-            "INSERT",
-
-          schema:
-            "public",
-
-          table:
-            "bids"
+          event: "INSERT",
+          schema: "public",
+          table: "bids"
         },
 
         function(payload) {
@@ -1130,7 +1364,6 @@
             "Yangi bid:",
             payload.new
           );
-
 
           if (
             auction &&
